@@ -1,9 +1,12 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "kishor-rajbanshi/laravel",
     "type": "project",
     "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "keywords": [
+        "laravel",
+        "framework"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.3",
@@ -12,12 +15,16 @@
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
+        "larastan/larastan": "^3.15",
+        "laravel/boost": "^2.10",
         "laravel/pail": "^1.2.5",
         "laravel/pao": "^1.0.6",
         "laravel/pint": "^1.27",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
-        "phpunit/phpunit": "^12.5.12"
+        "nunomaduro/phpinsights": "^2.14",
+        "phpunit/phpunit": "^12.5.12",
+        "roave/security-advisories": "dev-latest"
     },
     "autoload": {
         "psr-4": {
@@ -38,14 +45,34 @@
             "@php artisan key:generate",
             "@php artisan migrate --force",
             "npm install --ignore-scripts",
-            "npm run build"
+            "npm run build",
+            "@rename-dependabot-files",
+            "@php artisan boost:install --no-interaction --ansi"
+        ],
+        "rename-dependabot-files": [
+            "@php -r \"is_file('.github/dependabot.yml.dist') && rename('.github/dependabot.yml.dist', '.github/dependabot.yml');\"",
+            "@php -r \"is_file('.github/workflows/dependabot-auto-merge.yml.dist') && rename('.github/workflows/dependabot-auto-merge.yml.dist', '.github/workflows/dependabot-auto-merge.yml');\""
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
             "@php artisan dev"
         ],
+        "lint": [
+            "pint --parallel"
+        ],
+        "test:lint": [
+            "pint --parallel --test"
+        ],
+        "test:types": [
+            "phpstan analyse"
+        ],
         "test": [
+            "Composer\\Config::disableProcessTimeout",
+            "npm run check",
+            "npm run types:check",
             "@php artisan config:clear --ansi @no_additional_args",
+            "test:lint",
+            "test:types",
             "@php artisan test"
         ],
         "post-autoload-dump": [
@@ -53,15 +80,18 @@
             "@php artisan package:discover --ansi"
         ],
         "post-update-cmd": [
-            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
+            "@php -r \"is_file('boost.json') && is_dir('vendor/laravel/boost') && passthru(escapeshellarg(PHP_BINARY).' artisan boost:update --ansi');\""
         ],
         "post-root-package-install": [
-            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
+            "@rename-dependabot-files"
         ],
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi",
             "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
-            "@php artisan migrate --graceful --ansi"
+            "@php artisan migrate --graceful --ansi",
+            "@php -r \"getenv('LARAVEL_INSTALLER_DEFER_HOOKS') || ! is_dir('vendor/laravel/boost') || passthru(escapeshellarg(PHP_BINARY).' artisan boost:install --no-interaction --ansi');\""
         ],
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
@@ -76,7 +106,37 @@
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true,
+        "policy": {
+            "cooldown": {
+                "period": "5 days",
+                "ignore": {
+                    "laravel/*": "We trust the Laravel packages",
+                    "roave/security-advisories": "We can trust the Roave security advisories",
+                    "symfony/http-client": {
+                        "constraint": "7.4.24 || 8.1.12",
+                        "reason": "Security fix still in cooldown"
+                    },
+                    "symfony/http-foundation": {
+                        "constraint": "7.4.24 || 8.1.12",
+                        "reason": "Security fix still in cooldown"
+                    },
+                    "symfony/http-kernel": {
+                        "constraint": "7.4.24 || 8.1.12",
+                        "reason": "Security fix still in cooldown"
+                    },
+                    "symfony/mailer": {
+                        "constraint": "7.4.24 || 8.1.12",
+                        "reason": "Security fix still in cooldown"
+                    },
+                    "symfony/routing": {
+                        "constraint": "7.4.24 || 8.1.12",
+                        "reason": "Security fix still in cooldown"
+                    }
+                }
+            }
+        },
         "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
         }
